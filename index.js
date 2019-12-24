@@ -2,30 +2,12 @@ const parse = require("csv-parse/lib/sync")
 const { convertArrayToCSV } = require("convert-array-to-csv")
 const fs = require("fs")
 const path = require("path")
+const { translationMapToLocaleFile } = require("./constants")
 
+// config
 const translationsFile = "translations.csv"
 const MESSAGES_DIR = "messages"
 const SOURCE_MESSAGE_KEY = "string"
-const MESSAGE_KEY = "ru"
-
-const MESSAGES = {
-  // ar: [], // 'ar-ar.csv'
-  da: ["da-dk.csv"],
-  de: ["de-de.csv"],
-  string: ["default.csv"], // todo: change this. default its 'english', not 'string'
-  en: ["en-us.csv", "en-ww.csv"],
-  es: ["es-es.csv"],
-  fr: ["fr-fr.csv"],
-  it: ["it-it.csv"],
-  ja: ["ja-jp.csv"],
-  ko: ["ko-kr.csv"],
-  no: ["no-no.csv"],
-  pl: ["pl-pl.csv"],
-  pt: ["pt-pt.csv"],
-  br: ["pt-br.csv"],
-  ru: ["ru-ru.csv"],
-  sv: ["sv-se.csv"]
-}
 
 const readCsv = path => {
   const contents = fs.readFileSync(path, "utf8")
@@ -40,36 +22,57 @@ const writeCsv = (path, content) => {
   fs.writeFileSync(path, csv, "utf8")
 }
 
-const translations = readCsv(translationsFile)
-
-const mapSourceWithTarget = ({ locales, translations, sourceKey, targetKey }) =>
-  locales.map(locale => {
-    const result = translations.find(
-      t => t[sourceKey].toLowerCase() == locale.source.toLowerCase()
+const mapSourceWithTarget = ({
+  locale,
+  translations,
+  sourceKey,
+  targetKey
+}) => {
+  const localeLog = {
+    localeName: targetKey,
+    messagesNum: 0,
+    foundedMessagesNum: 0
+  }
+  const newLocale = locale.map(message => {
+    ++localeLog.messagesNum
+    const messageTranslation = translations.find(
+      t => t[sourceKey].toLowerCase() == message.source.toLowerCase()
     )
-    // todo: additional check for t.en == locale.source
-    locale.target = result ? result[targetKey] : ""
-    return locale
+    // todo: maybe add additional check for t.en == message.source
+    // todo: this approach removes filled message if they are not found in translations file
+    if (messageTranslation) {
+      ++localeLog.foundedMessagesNum
+      message.target = messageTranslation[targetKey]
+    }
+    return message
   })
+  console.log("localeLog", localeLog)
 
-const writeLocale = ({ fileName, translations, targetKey }) => {
-  const locales = readCsv(path.join(MESSAGES_DIR, fileName))
-  const result = mapSourceWithTarget({
-    locales,
-    translations,
-    targetKey,
-    sourceKey: SOURCE_MESSAGE_KEY
-  })
-
-  writeCsv(path.join("messages_results", fileName), result)
+  return newLocale
 }
 
-Object.keys(MESSAGES).forEach(targetKey => {
-  if (!MESSAGES[targetKey].length) {
+//todo: add an option to skip messages that are already filled
+//todo: find out duplicates
+
+const writeLocale = ({ fileName, translations, targetKey }) => {
+  const locale = readCsv(path.join(MESSAGES_DIR, fileName))
+  const newLocale = mapSourceWithTarget({
+    locale,
+    translations,
+    sourceKey: SOURCE_MESSAGE_KEY,
+    targetKey
+  })
+  writeCsv(path.join("messages_results", fileName), newLocale)
+}
+
+const translations = readCsv(translationsFile)
+
+Object.keys(translationMapToLocaleFile).forEach(targetKey => {
+  if (!translationMapToLocaleFile[targetKey].length) {
     return
   }
 
-  MESSAGES[targetKey].forEach(fileName =>
+  translationMapToLocaleFile[targetKey].forEach(fileName =>
     writeLocale({
       fileName,
       translations,
@@ -77,35 +80,3 @@ Object.keys(MESSAGES).forEach(targetKey => {
     })
   )
 })
-
-// let translation = null
-// fs.readFile('translation.csv', 'utf8', function (err, contents) {
-//     translation = parse(contents, {
-//         columns: true,
-//         skip_empty_lines: true
-//     })
-// })
-// console.log(translation)
-
-// fs.readdir(dir, (err, files) => {
-//     files.forEach(file => {
-//         // if (!file.isFile()) console.error('NOT A FILE')
-//
-//         console.log(file)
-//     });
-// });
-
-// const languages = [
-//     'string', 'en', 'fr', 'de', 'ru',
-//     'es', 'pt', 'br', 'pl',
-//     'it', 'ja', 'ko', 'no',
-//     'sv', 'da', 'ar'
-// ]
-
-// sort
-// extended check
-// delete broken messages
-
-const handleCurlyBraces = () => {
-  return
-}
