@@ -22,41 +22,56 @@ const writeCsv = (path, content) => {
   fs.writeFileSync(path, csv, "utf8")
 }
 
-const mapSourceWithTarget = ({
-  locale,
-  translations,
-  sourceKey,
-  targetKey
-}) => {
+const prepStr = str => str.toLowerCase().trim()
+
+//todo: rename mb
+const getNewLocaleFile = ({ locale, translations, sourceKey, targetKey }) => {
+  //todo: made OOP
   const localeLog = {
-    localeName: targetKey,
-    messagesNum: 0,
-    foundedMessagesNum: 0
+    locale: targetKey,
+    messages: 0,
+    translations: 0,
+    hasValue: 0,
+    hasNoValue: 0,
+    hasNoLocation: 0,
+    sameValue: 0,
+    differentValues: []
   }
   const newLocale = locale.map(message => {
-    ++localeLog.messagesNum
+    ++localeLog.messages
+    if (!message.location) ++localeLog.hasNoLocation
+
     const messageTranslation = translations.find(
-      t => t[sourceKey].toLowerCase() == message.source.toLowerCase()
+      t => prepStr(t[sourceKey]) === prepStr(message.source)
     )
-    // todo: maybe add additional check for t.en == message.source
-    // todo: this approach removes filled message if they are not found in translations file
     if (messageTranslation) {
-      ++localeLog.foundedMessagesNum
-      message.target = messageTranslation[targetKey]
+      ++localeLog.translations
+      if (message.target) {
+        ++localeLog.hasValue
+        if (message.target === messageTranslation[targetKey]) {
+          ++localeLog.sameValue
+        } else {
+          localeLog.differentValues.push({
+            fromMessage: message.target,
+            fromTranslation: messageTranslation[targetKey]
+          })
+        }
+      } else {
+        ++localeLog.hasNoValue
+        message.target = messageTranslation[targetKey]
+      }
     }
     return message
   })
-  console.log("localeLog", localeLog)
-
+  console.log(localeLog)
   return newLocale
 }
 
-//todo: add an option to skip messages that are already filled
-//todo: find out duplicates
-
 const writeLocale = ({ fileName, translations, targetKey }) => {
-  const locale = readCsv(path.join(MESSAGES_DIR, fileName))
-  const newLocale = mapSourceWithTarget({
+  let locale = readCsv(path.join(MESSAGES_DIR, fileName))
+  // to clear broken messages with empty 'location'
+  locale = locale.filter(m => m.location)
+  const newLocale = getNewLocaleFile({
     locale,
     translations,
     sourceKey: SOURCE_MESSAGE_KEY,
@@ -73,10 +88,11 @@ Object.keys(translationMapToLocaleFile).forEach(targetKey => {
   }
 
   translationMapToLocaleFile[targetKey].forEach(fileName =>
-    writeLocale({
-      fileName,
-      translations,
-      targetKey
-    })
+    writeLocale({ fileName, translations, targetKey })
   )
 })
+
+//todo: curly braces transformation {{{*}}} -> {*}, {{*}} -> {*}
+//todo: checks: 1. Case sensitive 2. Case insensitive
+//todo: find how many duplicates
+//todo: create 'build' and ?'input' dir

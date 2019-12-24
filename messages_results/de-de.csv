@@ -114,7 +114,7 @@ location,source,target,id,fuzzy,context,developer_comments
 "src/routes/messages.js",Spain,Spanje,"general.Spain",false,"general.Spain","general.Spain"
 "src/routes/messages.js",Switzerland,Schweiz,"general.Switzerland",false,"general.Switzerland","general.Switzerland"
 "src/routes/messages.js","United Kingdom","Verenigd Koningkrijk","general.UnitedKingdom",false,"general.United Kingdom","general.United Kingdom"
-"src/routes/messages.js","BEST DEAL","BESTES ANGEBOT","general.bestDeal",false,"general.bestDeal","general.bestDeal"
+"src/routes/messages.js","BEST DEAL","BEDSTE TILBUD","general.bestDeal",false,"general.bestDeal","general.bestDeal"
 "src/routes/messages.js","ByteFence’s cutting edge software detects and removes Trojans, Worms, Spyware, and other high risk malware.","Die bahnbrechende Software von ByteFence erkennt und entfernt Trojaner, Würmer, Spyware und andere hochgefährliche Malware.","general.byteFenceProduct",false,"general.byteFenceProduct","general.byteFenceProduct"
 "src/routes/messages.js","At ByteFence we care about your online privacy, check out this special offer that will guarantee your privacy.","Wir bei ByteFence legen Wert auf Ihre Online-Privatsphäre, schauen Sie sich dieses Sonderangebot an, das Ihre Privatsphäre garantiert.","general.cartDescription",false,"general.cartDescription","general.cartDescription"
 "src/routes/messages.js","ByteFence Anti-malware’s cutting edge software detects and removes Trojans, Worms, Spyware, Crapware and other high risk malware","ByteFence Anti-Malware´s innovative Software entdeckt und entfernt Trojaner, Würmer, Spyware, Crapware und andere risikoreiche Malware","general.description",false,"general.description","general.description"
