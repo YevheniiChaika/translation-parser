@@ -1,69 +1,88 @@
-const parse = require("csv-parse/lib/sync")
-const { convertArrayToCSV } = require("convert-array-to-csv")
-const fs = require("fs")
 const path = require("path")
-const { translationMapToLocaleFile } = require("./constants")
-
-// config
-const translationsFile = "translations.csv"
-const MESSAGES_DIR = "messages"
-const SOURCE_MESSAGE_KEY = "string"
-
-const readCsv = path => {
-  const contents = fs.readFileSync(path, "utf8")
-  return parse(contents, {
-    columns: true,
-    skip_empty_lines: true
-  })
+// const { translationMapToLocaleFile } = require("./constants") // todo: it is mocked while in testing
+const translationMapToLocaleFile = {
+  da: ["da-dk.csv"],
+  string: ["default.csv"], // todo: change this. default its 'english', not 'string'
+  en: ["en-us.csv"],
+  ru: ["ru-ru.csv"]
 }
+const {
+  translationsFile,
+  MESSAGES_DIR,
+  SOURCE_MESSAGE_KEY
+} = require("./config")
+const {
+  readCsv,
+  writeCsv,
+  prepStr,
+  prepStrCaseInsensitive,
+  fixBraces
+} = require("./utils")
+const { LocaleLog } = require("./localeLog")
 
-const writeCsv = (path, content) => {
-  const csv = convertArrayToCSV(content)
-  fs.writeFileSync(path, csv, "utf8")
-}
+const getNewLocaleFile = ({
+  locale,
+  translations,
+  sourceKey,
+  targetKey,
+  fileName
+}) => {
+  const logs = new LocaleLog(fileName + " <- " + targetKey)
 
-const prepStr = str => str.toLowerCase().trim()
-
-//todo: rename mb
-const getNewLocaleFile = ({ locale, translations, sourceKey, targetKey }) => {
-  //todo: made OOP
-  const localeLog = {
-    locale: targetKey,
-    messages: 0,
-    translations: 0,
-    hasValue: 0,
-    hasNoValue: 0,
-    hasNoLocation: 0,
-    sameValue: 0,
-    differentValues: []
-  }
   const newLocale = locale.map(message => {
-    ++localeLog.messages
-    if (!message.location) ++localeLog.hasNoLocation
+    logs.incMessages()
+    if (!message.location) {
+      ++localeLog.hasNoLocation
+    }
 
+    // case sensitive check
     const messageTranslation = translations.find(
-      t => prepStr(t[sourceKey]) === prepStr(message.source)
+      t => prepStr(message.source) === prepStr(fixBraces(t[sourceKey]))
     )
     if (messageTranslation) {
-      ++localeLog.translations
+      logs.incTranslations()
       if (message.target) {
-        ++localeLog.hasValue
+        logs.incHasValue()
         if (message.target === messageTranslation[targetKey]) {
-          ++localeLog.sameValue
+          logs.incSameValue()
         } else {
-          localeLog.differentValues.push({
+          logs.addDifferentValues({
             fromMessage: message.target,
             fromTranslation: messageTranslation[targetKey]
           })
         }
       } else {
-        ++localeLog.hasNoValue
+        logs.incHasNoValue()
         message.target = messageTranslation[targetKey]
+      }
+    } else {
+      const messageTranslationCaseInsensitive = translations.find(
+        t =>
+          prepStrCaseInsensitive(message.source) ===
+          prepStrCaseInsensitive(fixBraces(t[sourceKey]))
+      )
+      if (messageTranslationCaseInsensitive) {
+        logs.incTranslations()
+        logs.incTranslationsCaseInsensitive()
+        if (message.target) {
+          logs.incHasValue()
+          if (message.target === messageTranslationCaseInsensitive[targetKey]) {
+            logs.incSameValue()
+          } else {
+            logs.addDifferentValues({
+              fromMessage: message.target,
+              fromTranslation: messageTranslationCaseInsensitive[targetKey]
+            })
+          }
+        } else {
+          logs.incHasNoValue()
+          message.target = messageTranslationCaseInsensitive[targetKey]
+        }
       }
     }
     return message
   })
-  console.log(localeLog)
+  logs.show()
   return newLocale
 }
 
@@ -75,7 +94,8 @@ const writeLocale = ({ fileName, translations, targetKey }) => {
     locale,
     translations,
     sourceKey: SOURCE_MESSAGE_KEY,
-    targetKey
+    targetKey,
+    fileName
   })
   writeCsv(path.join("messages_results", fileName), newLocale)
 }
@@ -83,16 +103,23 @@ const writeLocale = ({ fileName, translations, targetKey }) => {
 const translations = readCsv(translationsFile)
 
 Object.keys(translationMapToLocaleFile).forEach(targetKey => {
-  if (!translationMapToLocaleFile[targetKey].length) {
-    return
+  if (translationMapToLocaleFile[targetKey].length) {
+    translationMapToLocaleFile[targetKey].forEach(fileName =>
+      writeLocale({ fileName, translations, targetKey })
+    )
   }
-
-  translationMapToLocaleFile[targetKey].forEach(fileName =>
-    writeLocale({ fileName, translations, targetKey })
-  )
 })
 
 //todo: curly braces transformation {{{*}}} -> {*}, {{*}} -> {*}
+// ---- also in checks
+const regex = /{{{?(.*?)}}}?/gm
+function replacer(match, p1, offset, string) {
+  return `{${p1}}`
+}
+const string =
+  "Billed as one payment of {{{currencyAndPrice}}} {{currencyAndPrice}} every 36 months"
+const newString = string.replace(regex, replacer)
+console.log(newString)
 //todo: checks: 1. Case sensitive 2. Case insensitive
 //todo: find how many duplicates
 //todo: create 'build' and ?'input' dir
