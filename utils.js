@@ -15,17 +15,39 @@ const writeCsv = (path, content) => {
   fs.writeFileSync(path, csv, "utf8")
 }
 
-const prepStr = str => str.trim()
-const prepStrCaseInsensitive = str => str.toLowerCase().trim()
+const prepStr = str => fixSpaces(removeTag(str)).trim()
+const prepStrCaseInsensitive = str => prepStr(str).toLowerCase()
 
-const regex = /{{{?(.*?)}}}?/gm
+const regexBraces = /{{{?(.*?)}}}?/gm
+// const regexBraces2 = /{{2,}([^}]+)}{2,}?/gm
+const regexTag = /\s*<[^>]*>\s*/gm
+const regexSpaces = /\s{2,}/gm
+const regexVariable = /{+[^}]*}+/gm
 
 function replacer(match, p1) {
   return `{${p1}}`
 }
 
 function fixBraces(str) {
-  return str.replace(regex, replacer)
+  return str.replace(regexBraces, replacer)
+}
+
+// function removeVariables (str) {
+//   return str.replace(regexVariable, '')
+// }
+
+const spaceChar = " "
+
+function removeTag(str) {
+  return str.replace(regexTag, spaceChar)
+}
+
+function compareStringsWithoutTags(str1, str2) {
+  return removeTag(str1) === removeTag(str2)
+}
+
+function fixSpaces(str) {
+  return str.replace(regexSpaces, spaceChar)
 }
 
 module.exports = {

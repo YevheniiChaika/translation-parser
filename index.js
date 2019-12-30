@@ -1,10 +1,12 @@
 const path = require("path")
-// const { translationMapToLocaleFile } = require("./constants") // todo: it is mocked while in testing
+// const { translationMapToLocaleFile } = require("./constants")
+// todo: it is mocked while in testing
 const translationMapToLocaleFile = {
   da: ["da-dk.csv"],
-  string: ["default.csv"], // todo: change this. default its 'english', not 'string'
+  string: ["default.csv"],
   en: ["en-us.csv"],
-  ru: ["ru-ru.csv"]
+  ru: ["ru-ru.csv"],
+  pt: ["pt-pt.csv"]
 }
 const {
   translationsFile,
@@ -19,6 +21,29 @@ const {
   fixBraces
 } = require("./utils")
 const { LocaleLog } = require("./localeLog")
+
+/**
+ * @param message
+ * @param logs
+ * @param translationElement
+ */
+function tryAssignNewMessage({ message, logs, translationElement }) {
+  const messageTarget = message.target
+  if (messageTarget) {
+    logs.incHasValue()
+    if (messageTarget === translationElement) {
+      logs.incSameValue()
+    } else {
+      logs.addDifferentValues({
+        fromMessage: messageTarget,
+        fromTranslation: translationElement
+      })
+    }
+  } else {
+    logs.incHasNoValue()
+    message.target = fixBraces(translationElement)
+  }
+}
 
 const getNewLocaleFile = ({
   locale,
@@ -36,54 +61,35 @@ const getNewLocaleFile = ({
     }
 
     // case sensitive check
+    const enLang = "en"
     const messageTranslation = translations.find(
       t =>
         prepStr(message.source) === prepStr(fixBraces(t[sourceKey])) ||
-        prepStr(message.source) === prepStr(fixBraces(t["en"]))
+        prepStr(message.source) === prepStr(fixBraces(t[enLang]))
     )
     if (messageTranslation) {
       logs.incTranslations()
-      if (message.target) {
-        logs.incHasValue()
-        if (message.target === messageTranslation[targetKey]) {
-          logs.incSameValue()
-        } else {
-          logs.addDifferentValues({
-            fromMessage: message.target,
-            fromTranslation: messageTranslation[targetKey]
-          })
-        }
-      } else {
-        logs.incHasNoValue()
-        message.target = fixBraces(messageTranslation[targetKey])
-      }
+      tryAssignNewMessage({
+        message: message,
+        logs: logs,
+        translationElement: messageTranslation[targetKey]
+      })
     } else {
       const messageTranslationCaseInsensitive = translations.find(
         t =>
           prepStrCaseInsensitive(message.source) ===
             prepStrCaseInsensitive(fixBraces(t[sourceKey])) ||
           prepStrCaseInsensitive(message.source) ===
-            prepStrCaseInsensitive(fixBraces(t["en"]))
+            prepStrCaseInsensitive(fixBraces(t[enLang]))
       )
       if (messageTranslationCaseInsensitive) {
         logs.incTranslations()
         logs.incTranslationsCaseInsensitive()
-        if (message.target) {
-          logs.incHasValue()
-          if (message.target === messageTranslationCaseInsensitive[targetKey]) {
-            logs.incSameValue()
-          } else {
-            logs.addDifferentValues({
-              fromMessage: message.target,
-              fromTranslation: messageTranslationCaseInsensitive[targetKey]
-            })
-          }
-        } else {
-          logs.incHasNoValue()
-          message.target = fixBraces(
-            messageTranslationCaseInsensitive[targetKey]
-          )
-        }
+        tryAssignNewMessage({
+          message: message,
+          logs: logs,
+          translationElement: messageTranslationCaseInsensitive[targetKey]
+        })
       }
     }
     return message
@@ -116,5 +122,4 @@ Object.keys(translationMapToLocaleFile).forEach(targetKey => {
   }
 })
 
-//todo: create 'build' and ?'input' dir
-//todo: html tags corrections
+//todo: create 'build' and ? 'input' dir
