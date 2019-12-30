@@ -28,8 +28,6 @@ function fixBraces(str) {
   return str.replace(regex, replacer)
 }
 
-module.exports = { replaceCurlyBraces }
-
 module.exports = {
   readCsv,
   writeCsv,

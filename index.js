@@ -32,12 +32,14 @@ const getNewLocaleFile = ({
   const newLocale = locale.map(message => {
     logs.incMessages()
     if (!message.location) {
-      ++localeLog.hasNoLocation
+      ++logs.hasNoLocation
     }
 
     // case sensitive check
     const messageTranslation = translations.find(
-      t => prepStr(message.source) === prepStr(fixBraces(t[sourceKey]))
+      t =>
+        prepStr(message.source) === prepStr(fixBraces(t[sourceKey])) ||
+        prepStr(message.source) === prepStr(fixBraces(t["en"]))
     )
     if (messageTranslation) {
       logs.incTranslations()
@@ -53,13 +55,15 @@ const getNewLocaleFile = ({
         }
       } else {
         logs.incHasNoValue()
-        message.target = messageTranslation[targetKey]
+        message.target = fixBraces(messageTranslation[targetKey])
       }
     } else {
       const messageTranslationCaseInsensitive = translations.find(
         t =>
           prepStrCaseInsensitive(message.source) ===
-          prepStrCaseInsensitive(fixBraces(t[sourceKey]))
+            prepStrCaseInsensitive(fixBraces(t[sourceKey])) ||
+          prepStrCaseInsensitive(message.source) ===
+            prepStrCaseInsensitive(fixBraces(t["en"]))
       )
       if (messageTranslationCaseInsensitive) {
         logs.incTranslations()
@@ -76,7 +80,9 @@ const getNewLocaleFile = ({
           }
         } else {
           logs.incHasNoValue()
-          message.target = messageTranslationCaseInsensitive[targetKey]
+          message.target = fixBraces(
+            messageTranslationCaseInsensitive[targetKey]
+          )
         }
       }
     }
@@ -110,16 +116,5 @@ Object.keys(translationMapToLocaleFile).forEach(targetKey => {
   }
 })
 
-//todo: curly braces transformation {{{*}}} -> {*}, {{*}} -> {*}
-// ---- also in checks
-const regex = /{{{?(.*?)}}}?/gm
-function replacer(match, p1, offset, string) {
-  return `{${p1}}`
-}
-const string =
-  "Billed as one payment of {{{currencyAndPrice}}} {{currencyAndPrice}} every 36 months"
-const newString = string.replace(regex, replacer)
-console.log(newString)
-//todo: checks: 1. Case sensitive 2. Case insensitive
-//todo: find how many duplicates
 //todo: create 'build' and ?'input' dir
+//todo: html tags corrections
