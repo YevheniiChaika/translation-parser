@@ -1,13 +1,13 @@
 const path = require("path")
-// const { translationMapToLocaleFile } = require("./constants")
+const { translationMapToLocaleFile } = require("./constants")
 // todo: it is mocked while in testing
-const translationMapToLocaleFile = {
-  da: ["da-dk.csv"],
-  string: ["default.csv"],
-  en: ["en-us.csv"],
-  ru: ["ru-ru.csv"],
-  pt: ["pt-pt.csv"]
-}
+// const translationMapToLocaleFile = {
+//   da: ["da-dk.csv"],
+//   string: ["default.csv"],
+//   en: ["en-us.csv"],
+//   ru: ["ru-ru.csv"],
+//   pt: ["pt-pt.csv"]
+// }
 const {
   translationsFile,
   MESSAGES_DIR,
@@ -21,7 +21,10 @@ const {
   fixBraces
 } = require("./utils")
 const { LocaleLog } = require("./localeLog")
-
+const ps = str => prepStr(str)
+const psf = str => prepStr(fixBraces(str))
+const pci = str => prepStrCaseInsensitive(str)
+const pcif = str => prepStrCaseInsensitive(fixBraces(str))
 /**
  * @param message
  * @param logs
@@ -64,9 +67,10 @@ const getNewLocaleFile = ({
     const enLang = "en"
     const messageTranslation = translations.find(
       t =>
-        prepStr(message.source) === prepStr(fixBraces(t[sourceKey])) ||
-        prepStr(message.source) === prepStr(fixBraces(t[enLang]))
+        ps(message.source) === psf(t[sourceKey]) ||
+        ps(message.source) === psf(t[enLang])
     )
+
     if (messageTranslation) {
       logs.incTranslations()
       tryAssignNewMessage({
@@ -74,26 +78,28 @@ const getNewLocaleFile = ({
         logs: logs,
         translationElement: messageTranslation[targetKey]
       })
-    } else {
-      const messageTranslationCaseInsensitive = translations.find(
-        t =>
-          prepStrCaseInsensitive(message.source) ===
-            prepStrCaseInsensitive(fixBraces(t[sourceKey])) ||
-          prepStrCaseInsensitive(message.source) ===
-            prepStrCaseInsensitive(fixBraces(t[enLang]))
-      )
-      if (messageTranslationCaseInsensitive) {
-        logs.incTranslations()
-        logs.incTranslationsCaseInsensitive()
-        tryAssignNewMessage({
-          message: message,
-          logs: logs,
-          translationElement: messageTranslationCaseInsensitive[targetKey]
-        })
-      }
+      return message
     }
+
+    const messageTranslationCaseInsensitive = translations.find(
+      t =>
+        pci(message.source) === pcif(t[sourceKey]) ||
+        pci(message.source) === pcif(t[enLang])
+    )
+
+    if (messageTranslationCaseInsensitive) {
+      logs.incTranslations()
+      logs.incTranslationsCaseInsensitive()
+      tryAssignNewMessage({
+        message: message,
+        logs: logs,
+        translationElement: messageTranslationCaseInsensitive[targetKey]
+      })
+    }
+
     return message
   })
+
   logs.show()
   return newLocale
 }

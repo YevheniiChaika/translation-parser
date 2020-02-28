@@ -42,6 +42,10 @@ function removeTag(str) {
   return str.replace(regexTag, spaceChar)
 }
 
+function replaceApostrophe(str) {
+  return str.replace("’", "'")
+}
+
 function compareStringsWithoutTags(str1, str2) {
   return removeTag(str1) === removeTag(str2)
 }
