@@ -15,7 +15,7 @@ const writeCsv = (path, content) => {
   fs.writeFileSync(path, csv, "utf8")
 }
 
-const prepStr = str => fixSpaces(removeTag(str)).trim()
+const prepStr = str => replaceApostrophe(fixSpaces(removeTag(str))).trim()
 const prepStrCaseInsensitive = str => prepStr(str).toLowerCase()
 
 const regexBraces = /{{{?(.*?)}}}?/gm

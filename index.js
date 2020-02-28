@@ -100,7 +100,7 @@ const getNewLocaleFile = ({
     return message
   })
 
-  logs.show()
+  logs.show(true)
   return newLocale
 }
 

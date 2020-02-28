@@ -48,7 +48,7 @@ function LocaleLog(locale) {
       sameValue: this.sameValue,
       hasNoLocation: this.hasNoLocation
     })
-    showDifs && console.table(...this.differentValues)
+    showDifs && console.log(...this.differentValues)
   }
 }
 
