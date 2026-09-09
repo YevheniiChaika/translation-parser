@@ -13,7 +13,7 @@
     "assert": "^2.0.0",
     "convert-array-to-csv": "^1.0.9",
     "csv-generate": "^3.2.4",
-    "csv-parse": "^4.8.2",
+    "csv-parse": "^7.0.2",
     "prettier": "^1.19.1"
   }
 }
